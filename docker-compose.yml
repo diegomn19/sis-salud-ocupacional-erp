@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:16
+    restart: always
+    container_name: salud_db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: salud
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n_salud
+    restart: always
+    ports:
+      - "5678:5678"         # aquí entras a la UI de n8n
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=db       # servicio 'db' de arriba
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=salud
+      - DB_POSTGRESDB_USER=admin
+      - DB_POSTGRESDB_PASSWORD=admin123
+      - GENERIC_TIMEZONE=America/Lima
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

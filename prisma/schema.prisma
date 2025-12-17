@@ -1,0 +1,188 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model admisiones {
+  id               String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  paciente_id      String?            @db.Uuid
+  fecha            DateTime           @db.Date
+  tipo_examen      String?            @db.VarChar(50)
+  estado           String?            @default("PENDIENTE") @db.VarChar(30)
+  observaciones    String?
+  creado_por       String?            @db.Uuid
+  factura_id       String?            @unique @db.Uuid
+  usuarios         usuarios?          @relation(fields: [creado_por], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  pacientes        pacientes?         @relation(fields: [paciente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  citas            citas[]
+  concepto_aptitud concepto_aptitud?
+  facturas         facturas?
+  ordenes_examenes ordenes_examenes[]
+  archivos_historia archivos_historia[]
+}
+
+model auditoria {
+  id         BigInt    @id @default(autoincrement())
+  tabla      String?   @db.VarChar(60)
+  operacion  String?   @db.Char(1)
+  usuario_id String?   @db.Uuid
+  old_row    Json?
+  new_row    Json?
+  fecha      DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model citas {
+  id           String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  admision_id  String?     @db.Uuid
+  fecha_hora   DateTime    @db.Timestamptz(6)
+  duracion_min Int?        @default(30)
+  medico_id    String?     @db.Uuid
+  estado       String?     @default("AGENDADO") @db.VarChar(20)
+  admisiones   admisiones? @relation(fields: [admision_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuarios     usuarios?   @relation(fields: [medico_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([fecha_hora], map: "idx_citas_fecha")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model concepto_aptitud {
+  id          String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  admision_id String?     @unique @db.Uuid
+  resultado   String?     @db.VarChar(30)
+  pdf_path    String?
+  firmado_por String?     @db.Uuid
+  firmado_en  DateTime?   @db.Timestamptz(6)
+  admisiones  admisiones? @relation(fields: [admision_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuarios    usuarios?   @relation(fields: [firmado_por], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model empresas {
+  id           String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  ruc          String      @unique @db.VarChar(15)
+  razon_social String      @db.VarChar(150)
+  contacto     Json?
+  pacientes    pacientes[]
+}
+
+model examenes {
+  id               String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  nombre           String             @unique @db.VarChar(100)
+  descripcion      String?
+  ordenes_examenes ordenes_examenes[]
+}
+
+model facturas {
+  id           String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  admision_id  String?     @unique @db.Uuid
+  serie        String?     @db.VarChar(10)
+  correlativo  Int?
+  xml_sunat    String?
+  pdf_path     String?
+  total        Decimal?    @db.Decimal(10, 2)
+  estado_sunat     String?     @default("PENDIENTE") @db.VarChar(20)
+  tipo_comprobante String?     @default("Boleta") @db.VarChar(20)
+  metodo_pago      String?     @default("Tarjeta") @db.VarChar(30)
+  subtotal         Decimal?    @db.Decimal(10, 2)
+  igv              Decimal?    @db.Decimal(10, 2)
+  admisiones       admisiones? @relation(fields: [admision_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model servicios_medicos {
+  id                 String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  codigo             String? @unique @db.VarChar(20)
+  nombre             String? @db.VarChar(150)
+  descripcion        String?
+  precio             Decimal? @db.Decimal(10, 2)
+  duracion_min       Int?
+  medico_responsable String? @db.VarChar(100)
+}
+
+model movimientos_inventario {
+  id          String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  producto_id String?    @db.Uuid
+  cantidad    Int
+  motivo      String?    @db.VarChar(100)
+  fecha       DateTime?  @default(now()) @db.Timestamptz(6)
+  productos   productos? @relation(fields: [producto_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model ordenes_examenes {
+  id             String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  admision_id    String?          @db.Uuid
+  examen_id      String?          @db.Uuid
+  estado         String?          @default("PENDIENTE") @db.VarChar(30)
+  admisiones     admisiones?      @relation(fields: [admision_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  examenes       examenes?        @relation(fields: [examen_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  resultados_lab resultados_lab[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model pacientes {
+  id         String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  usuario_id String?      @db.Uuid
+  fecha_nac  DateTime     @db.Date
+  sexo       String?      @db.Char(1)
+  direccion  String?      @db.VarChar(255)
+  telefono   String?      @db.VarChar(60)
+  huella_b64 String?
+  tipo_sangre String?     @db.VarChar(10)
+  alergias   String?
+  empresa_id String?      @db.Uuid
+  admisiones admisiones[]
+  empresas   empresas?    @relation(fields: [empresa_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuarios   usuarios?    @relation(fields: [usuario_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model productos {
+  id                     String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  nombre                 String?                  @db.VarChar(150)
+  stock_min              Int?                     @default(10)
+  stock_actual           Int
+  movimientos_inventario movimientos_inventario[]
+}
+
+model resultados_lab {
+  id               String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  orden_id         String?           @db.Uuid
+  valor            String?           @db.VarChar(255)
+  unidad           String?           @db.VarChar(20)
+  referencia       String?           @db.VarChar(60)
+  archivo_pdf      String?
+  validado_por     String?           @db.Uuid
+  fecha_validado   DateTime?         @db.Timestamptz(6)
+  ordenes_examenes ordenes_examenes? @relation(fields: [orden_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuarios         usuarios?         @relation(fields: [validado_por], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model usuarios {
+  id               String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  dni              String             @unique @db.VarChar(15)
+  nombre           String             @db.VarChar(100)
+  correo           String?            @unique @db.VarChar(120)
+  password_hash    String
+  rol              String?            @db.VarChar(30)
+  activo           Boolean?           @default(true)
+  creado_en        DateTime?          @default(now()) @db.Timestamptz(6)
+  admisiones       admisiones[]
+  citas            citas[]
+  concepto_aptitud concepto_aptitud[]
+  pacientes        pacientes[]
+  resultados_lab   resultados_lab[]
+
+  @@index([dni], map: "idx_usu_dni")
+}
+
+model archivos_historia {
+  id          String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  admision_id String?     @db.Uuid
+  nombre      String      @db.VarChar(255)
+  url         String
+  size        Int?
+  creado_en   DateTime?   @default(now()) @db.Timestamptz(6)
+  admisiones  admisiones? @relation(fields: [admision_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}

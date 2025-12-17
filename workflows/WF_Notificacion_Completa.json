@@ -1,0 +1,57 @@
+{
+    "name": "WF - Notificación Completa (Texto Plano)",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "admision/nueva",
+                "options": {}
+            },
+            "id": "webhook-rich",
+            "name": "Webhook Nueva Admisión",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                460,
+                240
+            ],
+            "credentials": {}
+        },
+        {
+            "parameters": {
+                "fromEmail": "no-reply@saludlaboral.pe",
+                "toEmail": "={{ $json.body.pacienteCorreo }}",
+                "subject": "=Confirmación de cita - {{ $json.body.empresa || 'Particular' }}",
+                "text": "=CONFIRMACIÓN DE EXAMEN MÉDICO OCUPACIONAL\n=========================================\n\nEstimado(a) {{ $json.body.pacienteNombre }},\n\nHemos recibido la admisión para su examen médico ocupacional y su cita ha sido programada correctamente.\n\nRESUMEN DE LA CITA\n------------------\nEmpresa:        {{ $json.body.empresa || 'Particular' }}\nTipo de Examen: {{ $json.body.tipoExamen }} ({{ $json.body.servicioCodigo }})\nFecha y Hora:   {{ $json.body.fechaCita }}\nEstado Pago:    {{ $json.body.estadoFactura }}\n\nDATOS DEL PACIENTE\n------------------\nNombre:   {{ $json.body.pacienteNombre }}\nCorreo:   {{ $json.body.pacienteCorreo }}\nTeléfono: {{ $json.body.pacienteTelefono }}\n\nDETALLE DEL EXAMEN\n------------------\nServicio:  {{ $json.body.tipoExamen }}\nDuración:  {{ $json.body.servicioDuracion }} minutos\nMédico:    {{ $json.body.medicoResponsable || 'Por asignar' }}\n\nRESUMEN DE PAGO\n---------------\nSubtotal: S/ {{ Number($json.body.subtotal).toFixed(2) }}\nIGV:      S/ {{ Number($json.body.igv).toFixed(2) }}\nTOTAL:    S/ {{ Number($json.body.total).toFixed(2) }}\n\nMétodo de Pago: {{ $json.body.metodoPago }}\n\n-----------------------------------------\nIMPORTANTE:\nPor favor preséntese con una anticipación mínima de 15 minutos a la hora indicada, portando su documento de identidad.\n\nAtentamente,\nUnidad de Salud Ocupacional\nCentro Médico",
+                "options": {}
+            },
+            "id": "email-rich",
+            "name": "Enviar email confirmación",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 2,
+            "position": [
+                680,
+                240
+            ],
+            "credentials": {
+                "smtp": {
+                    "id": "xMTOBT9iD5ZVTr78",
+                    "name": "SMTP account"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Webhook Nueva Admisión": {
+            "main": [
+                [
+                    {
+                        "node": "Enviar email confirmación",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

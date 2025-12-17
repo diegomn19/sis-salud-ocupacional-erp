@@ -1,0 +1,86 @@
+{
+    "name": "WF2 - Webhook Aptitud Finalizada (Corrección V2)",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "aptitud/finalizada",
+                "options": {}
+            },
+            "id": "webhook-aptitud",
+            "name": "Webhook Aptitud Finalizada",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                -800,
+                500
+            ],
+            "webhookId": "webhook-test/aptitud/finalizada",
+            "credentials": {}
+        },
+        {
+            "parameters": {
+                "fromEmail": "no-reply@saludlaboral.pe",
+                "toEmail": "={{ $json.body.pacienteCorreo }}",
+                "subject": "={{ 'Informe de aptitud ocupacional - ' + $json.body.pacienteNombre }}",
+                "text": "={{ 'Hola ' + $json.body.pacienteNombre + ',\\n\\nAdjuntamos tu certificado de aptitud ocupacional.\\n\\nResultado: ' + $json.body.resultado + '\\nFecha: ' + $json.body.fecha }}",
+                "options": {}
+            },
+            "id": "email-paciente",
+            "name": "Enviar email paciente",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 2,
+            "position": [
+                -500,
+                400
+            ],
+            "credentials": {
+                "smtp": {
+                    "id": "xMTOBT9iD5ZVTr78",
+                    "name": "SMTP account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "fromEmail": "no-reply@saludlaboral.pe",
+                "toEmail": "={{ $json.body.empresaCorreo }}",
+                "subject": "={{ 'Informe Aptitud - ' + $json.body.pacienteNombre }}",
+                "text": "={{ 'Estimados ' + $json.body.empresaNombre + ',\\n\\nAdjuntamos el certificado de aptitud del colaborador ' + $json.body.pacienteNombre + ' (DNI: ' + $json.body.pacienteDni + ').\\n\\nResultado: ' + $json.body.resultado }}",
+                "options": {}
+            },
+            "id": "email-empresa",
+            "name": "Enviar email empresa",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 2,
+            "position": [
+                -500,
+                600
+            ],
+            "credentials": {
+                "smtp": {
+                    "id": "xMTOBT9iD5ZVTr78",
+                    "name": "SMTP account"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Webhook Aptitud Finalizada": {
+            "main": [
+                [
+                    {
+                        "node": "Enviar email paciente",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Enviar email empresa",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

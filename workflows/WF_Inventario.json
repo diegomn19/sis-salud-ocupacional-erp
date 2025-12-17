@@ -1,0 +1,58 @@
+{
+    "name": "Notificaciones Inventario",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "inventario/reporte",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "name": "Webhook Inventario",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                460,
+                340
+            ],
+            "webhookId": "inventario-reporte-uuid"
+        },
+        {
+            "parameters": {
+                "authentication": "senderAuth",
+                "fromEmail": "sistema@clinica.com",
+                "toEmail": "logistica@clinica.com",
+                "subject": "={{ $json.body.titulo + ' - ' + $json.body.fecha }}",
+                "text": "={{ $json.body.titulo + '\\n\\nProductos:\\n' + $json.body.productos.map(p => '- ' + p.nombre + ': Stock ' + p.stockActual + ' (Min: ' + p.stockMinimo + ') [' + p.estado + ']').join('\\n') }}",
+                "html": "={{ '<h1>' + $json.body.titulo + '</h1><p>Fecha: ' + $json.body.fecha + '</p><table border=\"1\"><thead><tr><th>Producto</th><th>Stock Actual</th><th>Mínimo</th><th>Estado</th></tr></thead><tbody>' + $json.body.productos.map(p => '<tr><td>' + p.nombre + '</td><td>' + p.stockActual + '</td><td>' + p.stockMinimo + '</td><td style=\"color: ' + (p.estado === 'CRÍTICO' ? 'red' : 'green') + '\">' + p.estado + '</td></tr>').join('') + '</tbody></table>' }}",
+                "options": {}
+            },
+            "name": "Enviar Email",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 1,
+            "position": [
+                680,
+                340
+            ],
+            "credentials": {
+                "smtp": {
+                    "id": "YOUR_SMTP_CREDENTIAL_ID",
+                    "name": "SMTP Account"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Webhook Inventario": {
+            "main": [
+                [
+                    {
+                        "node": "Enviar Email",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
