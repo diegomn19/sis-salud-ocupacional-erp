@@ -55,7 +55,7 @@ export default defineEventHandler(async (event) => {
         nombre_completo: `${usuario.nombre} ${pacienteData.apellidos || ''}`.trim(),
         dni: usuario.dni,
         correo: usuario.correo,
-        fecha_nacimiento: pacienteData.fecha_nacimiento,
+        fecha_nacimiento: pacienteData.fecha_nac,
         sexo: pacienteData.sexo,
         tipo_sangre: pacienteData.tipo_sangre,
         alergias: pacienteData.alergias,

@@ -269,9 +269,15 @@ const stats = ref({
 const recentAdmissions = ref<any[]>([])
 
 function generarReporte() {
-  const startDate = '2025-01-01'
-  const endDate = '2025-01-31'
-  window.open(`/api/reportes/admisiones?fechaInicio=${startDate}&fechaFin=${endDate}`, '_blank')
+  const date = new Date()
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const lastDay = new Date(year, date.getMonth() + 1, 0).getDate()
+  
+  const desde = `${year}-${month}-01`
+  const hasta = `${year}-${month}-${lastDay}`
+  
+  window.open(`/api/reportes/admisiones-pdf?desde=${desde}&hasta=${hasta}`, '_blank')
 }
 
 async function fetchStats() {
